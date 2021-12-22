@@ -41,6 +41,7 @@ youthContract.events.ITORelease({
             price: res.curPrice,
             quantity: res.numShares,
             influencerAddress:res.id,
+            influencerName:res.name,
             status:'Pending',
             type:'Sell'
         },(err,order)=>{
@@ -365,13 +366,15 @@ app.get('/getInfluencerDetails/:id',(req,res)=>{
             const sellOrderBook = influencer.sellOrderBook;
             const sharePriceHistory = influencer.sharePriceHistory;
             const averagePrice = influencer.averagePrice;
+            const name = influencer.name;
             const influencerObj = {
                 address: influencerAddress,
                 numShares: numShares,
                 curPrice: curPrice,
                 buyOrderBook: buyOrderBook,
                 sellOrderBook: sellOrderBook,
-                sharePriceHistory: sharePriceHistory
+                sharePriceHistory: sharePriceHistory,
+                name: name
             };
             return res.status(200).json({influencer:influencerObj});
         }
@@ -420,7 +423,8 @@ app.post('/cancelSellOrder',(req,res)=>{
 
 app.post('/buyShares',async(req,res)=>{
     const data = req.body;
-    const influencerAddress = data.influencer;
+    const influencerAddress = data.influencerAddress;
+    const influencerName = data.influencerName;
     var maxBuyPrice = data.maxBuyPrice;
     const numShares = data.numShares;
     const userId = data.userId;
@@ -456,6 +460,7 @@ app.post('/buyShares',async(req,res)=>{
                                 price: maxBuyPrice,
                                 quantity: numShares,
                                 influencerAddress:influencerAddress,
+                                influencerName: influencerName,
                                 type:'Buy',
                                 status:'Pending'
                             },(err,order)=>{
@@ -516,6 +521,7 @@ app.post('/buyShares',async(req,res)=>{
                                                 Order.create({
                                                     address: userId,
                                                     influencerAddress:influencerAddress,
+                                                    influencerName: influencerName,
                                                     price: maxBuyPrice,
                                                     quantity: numShares,
                                                     status: 'Completed',
@@ -557,7 +563,8 @@ app.post('/buyShares',async(req,res)=>{
 app.post('/sellShares',async(req,res)=>{
     const data = req.body;
     console.log(data);
-    const influencerAddress = data.influencer;
+    const influencerAddress = data.influencerAddress;
+    const influencerName = data.influencerName;
     var minSellPrice = data.minSellPrice;
     const numShares = data.numShares;
     const userId = data.userId;
@@ -594,6 +601,7 @@ app.post('/sellShares',async(req,res)=>{
                                         price: minSellPrice,
                                         quantity: numShares,
                                         influencerAddress:influencerAddress,
+                                        influencerName: influencerName,
                                         type:'Sell',
                                         status:'Pending'
                                     },(err,order)=>{
@@ -663,6 +671,7 @@ app.post('/sellShares',async(req,res)=>{
                                                         price: minSellPrice,
                                                         quantity: numShares,
                                                         influencerAddress:influencerAddress,
+                                                        influencerName: influencerName,
                                                         type:'Sell',
                                                         status:'Completed'
                                                     },async(err,curOrder)=>{
