@@ -353,8 +353,8 @@ app.get('/orders/:id',(req,res)=>{
 })
 
 app.get('/getInfluencerDetails/:id',(req,res)=>{
-    const influencerAddress = req.params.id;
-    Influencer.findOne({address: influencerAddress}, (err, influencer) => {
+    const influencerName = req.params.id;
+    Influencer.findOne({name: influencerName}, (err, influencer) => {
         if (err) {
             return res.status(404).json({msg:'Id incorrect'});
         }
@@ -366,7 +366,7 @@ app.get('/getInfluencerDetails/:id',(req,res)=>{
             const sellOrderBook = influencer.sellOrderBook;
             const sharePriceHistory = influencer.sharePriceHistory;
             const averagePrice = influencer.averagePrice;
-            const name = influencer.name;
+            const influencerAddress = influencer.address;
             const influencerObj = {
                 address: influencerAddress,
                 numShares: numShares,
@@ -374,7 +374,8 @@ app.get('/getInfluencerDetails/:id',(req,res)=>{
                 buyOrderBook: buyOrderBook,
                 sellOrderBook: sellOrderBook,
                 sharePriceHistory: sharePriceHistory,
-                name: name
+                name: influencerName,
+                averagePrice: averagePrice
             };
             return res.status(200).json({influencer:influencerObj});
         }
@@ -425,7 +426,7 @@ app.post('/buyShares',async(req,res)=>{
     const data = req.body;
     const influencerAddress = data.influencerAddress;
     const influencerName = data.influencerName;
-    var maxBuyPrice = data.maxBuyPrice;
+    let maxBuyPrice = data.maxBuyPrice;
     const numShares = data.numShares;
     const userId = data.userId;
     User.findOne({id:userId},(err,gUser)=>{
@@ -565,7 +566,7 @@ app.post('/sellShares',async(req,res)=>{
     console.log(data);
     const influencerAddress = data.influencerAddress;
     const influencerName = data.influencerName;
-    var minSellPrice = data.minSellPrice;
+    let minSellPrice = data.minSellPrice;
     const numShares = data.numShares;
     const userId = data.userId;
     User.findOne({id:userId},(err,gUser)=>{

@@ -43,6 +43,10 @@ contract YouthToken {
         deployer = msg.sender;
     }
 
+    function getPriceOfToken() view public returns(uint) {
+        return priceOfToken;
+    }
+
     function ITO(uint _numShares,uint _curPrice,string memory _name) public{
         Inf storage newInfluencer = globalShares[_name];
         newInfluencer.numShares = _numShares;
@@ -172,7 +176,7 @@ contract YouthToken {
     // function to buy new tokens by spending ether
     function buy(string memory buyer,uint256 amount) payable public returns (bool){
         // check if the total ether supplied is equal to the total price of the amount of the tokens to be bought
-        require(msg.value == amount*priceOfToken , "YouthToken: Insufficient or Excess supply of funds");
+        require(msg.value == amount*priceOfToken*(10**18) , "YouthToken: Insufficient or Excess supply of funds");
         
         // check if there are enough number of tokens to be bought
         require(totalSupply >= amount,"YouthToken: Available tokens less than the required amount");
