@@ -538,7 +538,7 @@ app.post('/buyShares',async(req,res)=>{
                                                         existingShare.numShares += numShares;
                                                         existingShare.save();
                                                         await increaseShares(influencerId,userId,existingShare.numShares,gUser.numYouthTokens);
-                                                        return res.status(200).json({share:existingShare,msg:'Share updated sucessfully'});
+                                                        return res.status(200).json({share:existingShare,msg:'done'});
                                                     }else{
                                                         Share.create({
                                                             ownerAddress: userId,
