@@ -31,21 +31,21 @@ youthContract.events.ITORelease({
 }, async function(error, event){ 
     let res = event.returnValues;
     Share.create({
-        ownerAddress:res.id,
-        influencerAddress:res.id,
+        ownerAddress:res.userAddress,
+        influencerAddress:res.userAddress,
         numShares:res.numShares,
         priceAtWhichBought:res.curPrice,
     },(err,share)=>{
         Order.create({
-            address: res.id,
+            address: res.userAddress,
             price: res.curPrice,
             quantity: res.numShares,
-            influencerAddress:res.id,
+            influencerAddress:res.userAddress,
             influencerName:res.name,
             status:'Pending',
             type:'Sell'
         },(err,order)=>{
-            User.findOne({userId:res.id},(err,user)=>{
+            User.findOne({id:res.id},(err,user)=>{
                 if(user==null){
                     console.log("No user found");
                     return;
@@ -55,14 +55,14 @@ youthContract.events.ITORelease({
                     curPrice:res.curPrice,
                     averagePrice:res.curPrice,
                     name:user.name,
-                    address:res.id,
+                    address:res.userAddress,
                     sellOrderBook:[order],
                     sharePriceHistory: [{price: res.curPrice, atDateTime: new Date(Date.now()).toISOString()}]
                 },async(err,inf)=>{
                     user.isInfluencer = true;
                     user.influencer = inf;
                     user.save();
-                    await addShares(res.id,res.id,res.numShares,user.numYouthTokens); 
+                    await addShares(res.userAddress,res.id,res.numShares,user.numYouthTokens); 
                     console.log("inf",inf);
                 })
             })
@@ -346,6 +346,7 @@ app.get('/holdings/:id',(req,res)=>{
 
 app.get('/orders/:id',(req,res)=>{
     const userId = req.params.id;
+	console.log("userId : ",userId);
     Order.find({address: userId}).exec(async(err, orders) =>{
         if(err)return res.status(503).json({msg:'Incorrect User ID'});
         return res.status(200).json({orders:orders});

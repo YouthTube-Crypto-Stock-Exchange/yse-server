@@ -103,6 +103,12 @@ const contractAbi = [
 				"internalType": "string",
 				"name": "name",
 				"type": "string"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
 			}
 		],
 		"name": "ITORelease",
@@ -203,7 +209,7 @@ const contractAbi = [
 			},
 			{
 				"internalType": "string",
-				"name": "_name",
+				"name": "id",
 				"type": "string"
 			}
 		],
@@ -388,7 +394,7 @@ const contractAbi = [
 			},
 			{
 				"internalType": "string",
-				"name": "_name",
+				"name": "name",
 				"type": "string"
 			}
 		],
@@ -469,6 +475,19 @@ const contractAbi = [
 	{
 		"inputs": [],
 		"name": "getContractBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getPriceOfToken",
 		"outputs": [
 			{
 				"internalType": "uint256",
