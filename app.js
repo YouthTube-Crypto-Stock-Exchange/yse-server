@@ -348,6 +348,7 @@ app.get('/holdings/:id',(req,res)=>{
 
 app.get('/orders/:id',(req,res)=>{
     const userId = req.params.id;
+	console.log("userId : ",userId);
     Order.find({address: userId}).exec(async(err, orders) =>{
         if(err)return res.status(503).json({msg:'Incorrect User ID'});
         return res.status(200).json({orders:orders});

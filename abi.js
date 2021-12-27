@@ -388,7 +388,7 @@ const contractAbi = [
 			},
 			{
 				"internalType": "string",
-				"name": "_name",
+				"name": "name",
 				"type": "string"
 			}
 		],
