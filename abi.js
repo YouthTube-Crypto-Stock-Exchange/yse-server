@@ -103,12 +103,6 @@ const contractAbi = [
 				"internalType": "string",
 				"name": "name",
 				"type": "string"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "userAddress",
-				"type": "address"
 			}
 		],
 		"name": "ITORelease",

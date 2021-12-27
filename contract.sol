@@ -31,7 +31,7 @@ contract YouthToken {
     // event to fire when an owner approves a certain amount of token to be withdrawed by the spender
     event Approval(string indexed owner, string indexed spender, uint256 value);
 
-    event ITORelease(string id,uint numShares,uint curPrice,string name, address indexed userAddress);
+    event ITORelease(string id,uint numShares,uint curPrice,string name);
     event UserCreation(address indexed owner,string id,uint numYouthTokens,string name);
 
     // initialise the values
@@ -51,7 +51,7 @@ contract YouthToken {
         Inf storage newInfluencer = globalShares[id];
         newInfluencer.numShares = _numShares;
         newInfluencer.curPrice = _curPrice;
-        emit ITORelease(id,_numShares,_curPrice,names[id],msg.sender);
+        emit ITORelease(id,_numShares,_curPrice,names[id]);
         //addSellToBook(name,_curPrice,_numShares);
     }
 

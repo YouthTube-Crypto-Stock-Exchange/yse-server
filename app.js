@@ -31,16 +31,16 @@ youthContract.events.ITORelease({
 }, async function(error, event){ 
     let res = event.returnValues;
     Share.create({
-        ownerAddress:res.userAddress,
-        influencerAddress:res.userAddress,
+        ownerAddress:res.id,
+        influencerAddress:res.id,
         numShares:res.numShares,
         priceAtWhichBought:res.curPrice,
     },(err,share)=>{
         Order.create({
-            address: res.userAddress,
+            address: res.id,
             price: res.curPrice,
             quantity: res.numShares,
-            influencerAddress:res.userAddress,
+            influencerAddress:res.id,
             influencerName:res.name,
             status:'Pending',
             type:'Sell'
@@ -55,14 +55,14 @@ youthContract.events.ITORelease({
                     curPrice:res.curPrice,
                     averagePrice:res.curPrice,
                     name:user.name,
-                    address:res.userAddress,
+                    address:res.id,
                     sellOrderBook:[order],
                     sharePriceHistory: [{price: res.curPrice, atDateTime: new Date(Date.now()).toISOString()}]
                 },async(err,inf)=>{
                     user.isInfluencer = true;
                     user.influencer = inf;
                     user.save();
-                    await addShares(res.userAddress,res.id,res.numShares,user.numYouthTokens); 
+                    await addShares(res.id,res.id,res.numShares,user.numYouthTokens); 
                     console.log("inf",inf);
                 })
             })
