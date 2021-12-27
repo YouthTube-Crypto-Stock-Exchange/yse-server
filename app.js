@@ -426,7 +426,6 @@ app.post('/cancelSellOrder',(req,res)=>{
 })
 
 app.post('/buyShares',async(req,res)=>{
-    console.log(req.body);
     const influencerId = req.body.influencerId;
     const influencerName = req.body.influencerName;
     let maxBuyPrice = req.body.maxBuyPrice;
@@ -435,7 +434,7 @@ app.post('/buyShares',async(req,res)=>{
     console.log(userId);
     User.findOne({id:userId},(err,gUser)=>{
         if(err){
-            return res.status(404);
+            return res.status(404).json({msg:'Could not retreive user information'});
         }else{
             if(gUser.numTokens >= numShares*maxBuyPrice){
                 return res.status(204).json({msg:'Not enough tokens available.'});
@@ -548,7 +547,7 @@ app.post('/buyShares',async(req,res)=>{
                                                             priceAtWhichBought: maxBuyPrice,
                                                         },async(err,share)=>{
                                                             await addShares(influencerId,userId,share.numShares,gUser.numYouthTokens)
-                                                            return res.status(200).json({share:share,msg:'Share added successfully'});
+                                                            return res.status(200).json({share:share,msg:'done'});
                                                         })
                                                     }
                                                 })
@@ -575,7 +574,7 @@ app.post('/sellShares',async(req,res)=>{
     const userId = data.userId;
     User.findOne({id:userId},(err,gUser)=>{
         if(err){
-            return res.status(404);
+            return res.status(404).json({msg:'Could not retreive user information'});
         }else{
             if(gUser==null)return res.status(404).json({msg:'No such user found'});
             Influencer.findOne({id:influencerId}).populate('buyOrderBook').populate('sellOrderBook').exec((err,influencer)=>{
@@ -624,7 +623,7 @@ app.post('/sellShares',async(req,res)=>{
                                             if(flag)influencer.sellOrderBook.splice(0,0,order);
                                         }
                                         influencer.save();
-                                        res.status(200).json({msg:'sell added'});
+                                        res.status(200).json({msg:'done'});
                                     })
                                 }else{
                                     curAmount = 0;
@@ -690,7 +689,7 @@ app.post('/sellShares',async(req,res)=>{
                                                         }else{
                                                             await decreaseShares(influencerId,userId,share.numShares,gUser.numYouthTokens);
                                                         }
-                                                        return res.status(200).json({share:share,msg:'Share updated sucessfully'});
+                                                        return res.status(200).json({share:share,msg:'done'});
                                                     })
                                                 }
                                             })
