@@ -17,7 +17,7 @@ contract YouthToken {
     mapping(string => mapping(string => uint256)) private allowances;
 
     uint256 private totalSupply; //total supply of tokens
-    uint256 private priceOfToken; //price of one token in ether
+    uint256 private priceOfToken; //price of one token in wei
 
     string private name; // name of the token
     string private symbol; // symbol of the token
@@ -47,18 +47,18 @@ contract YouthToken {
         return priceOfToken;
     }
 
-    function ITO(uint _numShares,uint _curPrice,string memory _name) public{
-        Inf storage newInfluencer = globalShares[_name];
+    function ITO(uint _numShares,uint _curPrice,string memory _id) public{
+        Inf storage newInfluencer = globalShares[_id];
         newInfluencer.numShares = _numShares;
         newInfluencer.curPrice = _curPrice;
-        emit ITORelease(_name,_numShares,_curPrice,names[_name]);
+        emit ITORelease(_id,_numShares,_curPrice,names[_id]);
         //addSellToBook(name,_curPrice,_numShares);
     }
 
-    function createUser(string memory id, uint numYouthTokens,string memory name) public{
+    function createUser(string memory id, uint numYouthTokens,string memory _name) public{
         balances[id]=numYouthTokens;
-        names[id]=name;
-        emit UserCreation(msg.sender,id,numYouthTokens,name);
+        names[id]=_name;
+        emit UserCreation(msg.sender,id,numYouthTokens,_name);
     }
 
     function increaseShares(string memory inf,string memory owner,uint numShares, uint newBalance) public{
@@ -76,7 +76,7 @@ contract YouthToken {
         balances[owner] = newBalance;
     }
 
-    function deleteShares(string memory inf,string memory owner,uint numShares, uint newBalance) public{
+    function deleteShares(string memory inf,string memory owner, uint newBalance) public{
         delete globalShares[inf].shares[owner];
         balances[owner] = newBalance;
     }
@@ -174,15 +174,15 @@ contract YouthToken {
     }
     
     // function to buy new tokens by spending ether
-    function buy(string memory buyer,uint256 amount) payable public returns (bool){
+    function buy(string memory buyerId,uint256 amount) payable public returns (bool){
         // check if the total ether supplied is equal to the total price of the amount of the tokens to be bought
-        require(msg.value == amount*priceOfToken*(10**18) , "YouthToken: Insufficient or Excess supply of funds");
+        require(msg.value == amount*priceOfToken , "YouthToken: Insufficient or Excess supply of funds");
         
         // check if there are enough number of tokens to be bought
         require(totalSupply >= amount,"YouthToken: Available tokens less than the required amount");
         
         // increase the balance of the caller
-        balances[buyer] += amount;
+        balances[buyerId] += amount;
 
         // decrement the total supply of the tokens
         unchecked{
@@ -190,14 +190,14 @@ contract YouthToken {
         }
 
         // here the tokens are transferred from the contract to the caller's account
-        emit BuyTokens(msg.sender, buyer, amount);
+        emit BuyTokens(msg.sender, buyerId, amount);
         return true;
     }
     
     // function to sell the tokens and transfer ether back to the owner
-    function sell(uint256 amount,string memory seller,address payable _deployer) public returns (bool){
+    function sell(uint256 amount,string memory sellerId,address payable _deployer) public returns (bool){
         // check if the account of the caller contains atleast amount number of tokens
-        require(balances[seller] >= amount , "YouthToken: Insufficient token balance");
+        require(balances[sellerId] >= amount , "YouthToken: Insufficient token balance");
 
         // check if the contract has enough funds to pay ether in exchange of tokens
         require(address(this).balance >= amount*priceOfToken,"YouthToken: Insufficient funds in the contract");
@@ -210,11 +210,11 @@ contract YouthToken {
 
         // decrease the token balance of the caller's account
         unchecked{
-            balances[seller] -= amount;
+            balances[sellerId] -= amount;
         }
 
         // here the tokens are transferred from the caller's account to the contract account
-        emit SellTokens(seller, msg.sender, amount);
+        emit SellTokens(sellerId, msg.sender, amount);
         return true;
     }
     

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const shareSchema = new mongoose.Schema({
     ownerAddress: String,
-    influencerAddress: String,
+    influencerId: String,
     numShares: Number,
     priceAtWhichBought: Number,
 });

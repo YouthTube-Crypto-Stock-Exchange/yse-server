@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
     address: String,
-    influencerAddress:String,
+    influencerId:String,
     influencerName:String,
     price: Number,
     quantity: Number,

@@ -13,7 +13,107 @@ const {youthContract,web3} = require('./abi');
 
 const PUBLIC_ADDRESS = process.env.PUBLIC_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const BLOCK_NUMBER = process.env.BLOCK_NUMBER;
+(async () => {
+    const BLOCK_NUMBER = await web3.eth.getBlockNumber();
+    youthContract.events.ITORelease({
+        fromBlock: BLOCK_NUMBER
+    }, async function(error, event){ 
+        let res = event.returnValues;
+        console.log(res);
+        Share.create({
+            ownerAddress:res.id,
+            influencerId:res.id,
+            numShares:res.numShares,
+            priceAtWhichBought:res.curPrice,
+        },(err,share)=>{
+            Order.create({
+                address: res.id,
+                price: res.curPrice,
+                quantity: res.numShares,
+                influencerId:res.id,
+                influencerName:res.name,
+                status:'Pending',
+                type:'Sell'
+            },(err,order)=>{
+                User.findOne({id:res.id},(err,user)=>{
+                    if(user==null){
+                        console.log("No user found");
+                        return;
+                    }
+                    Influencer.create({
+                        numShares:res.numShares,
+                        curPrice:res.curPrice,
+                        averagePrice:res.curPrice,
+                        name:res.name,
+                        id:res.id,
+                        sellOrderBook:[order],
+                        sharePriceHistory: [{price: res.curPrice, atDateTime: new Date(Date.now()).toISOString()}]
+                    },async(err,inf)=>{
+                        user.isInfluencer = true;
+                        user.influencer = inf;
+                        user.save();
+                        await addShares(res.id,res.id,res.numShares,user.numYouthTokens); 
+                        console.log("inf",inf);
+                    })
+                })
+            })
+        })
+    })
+    
+    youthContract.events.UserCreation({
+        fromBlock: BLOCK_NUMBER
+    }, function(error, event){ 
+        let res = event.returnValues;
+        console.log(res);
+        User.create({
+            address: res.owner,
+            id:res.id,
+            name:res.name,
+            numYouthTokens: res.numYouthTokens,
+        },(err,user)=>{
+            console.log(user);
+        })
+    })
+    
+    youthContract.events.BuyTokens({
+        fromBlock: BLOCK_NUMBER
+    },(err,event)=>{
+        let res = event.returnValues;
+        const userId = res.to;
+        console.log(event);
+        User.findOne({id:userId},(err,user)=>{
+            user.numYouthTokens += Number(res.value);
+            user.save();
+        })
+    })
+    
+    youthContract.events.SellTokens({
+        fromBlock: BLOCK_NUMBER
+    },(err,event)=>{
+        let res = event.returnValues;
+        const userId = res.from;
+        User.findOne({id:userId},(err,user)=>{
+            user.numYouthTokens -= Number(res.value);
+            user.save();
+        })
+    })
+    
+    youthContract.events.TransferInternal({
+        fromBlock: BLOCK_NUMBER
+    },(err,event)=>{
+        let res = event.returnValues;
+        const sender = res.sender;
+        const receiver = res.receiver;
+        User.findOne({id:sender},(err,senderUser)=>{
+            senderUser.numYouthTokens -= Number(res.value);
+            senderUser.save();
+            User.findOne({id:receiver},(err,receiverUser)=>{
+                receiverUser.numYouthTokens += Number(res.value);
+                receiverUser.save();
+            })
+        })
+    })
+})();
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -25,104 +125,6 @@ const MONGO_STRING = process.env.MONGO_URL;
 mongoose.connect(MONGO_STRING);
 
 const blockchainTransactionsQueue = [];
-
-youthContract.events.ITORelease({
-    fromBlock: BLOCK_NUMBER
-}, async function(error, event){ 
-    let res = event.returnValues;
-    Share.create({
-        ownerAddress:res.id,
-        influencerAddress:res.id,
-        numShares:res.numShares,
-        priceAtWhichBought:res.curPrice,
-    },(err,share)=>{
-        Order.create({
-            address: res.id,
-            price: res.curPrice,
-            quantity: res.numShares,
-            influencerAddress:res.id,
-            influencerName:res.name,
-            status:'Pending',
-            type:'Sell'
-        },(err,order)=>{
-            User.findOne({userId:res.id},(err,user)=>{
-                if(user==null){
-                    console.log("No user found");
-                    return;
-                }
-                Influencer.create({
-                    numShares:res.numShares,
-                    curPrice:res.curPrice,
-                    averagePrice:res.curPrice,
-                    name:user.name,
-                    address:res.id,
-                    sellOrderBook:[order],
-                    sharePriceHistory: [{price: res.curPrice, atDateTime: new Date(Date.now()).toISOString()}]
-                },async(err,inf)=>{
-                    user.isInfluencer = true;
-                    user.influencer = inf;
-                    user.save();
-                    await addShares(res.id,res.id,res.numShares,user.numYouthTokens); 
-                    console.log("inf",inf);
-                })
-            })
-        })
-    })
-})
-
-youthContract.events.UserCreation({
-    fromBlock: BLOCK_NUMBER
-}, function(error, event){ 
-    let res = event.returnValues;
-    console.log(res);
-    User.create({
-        address: res.owner,
-        id:res.id,
-        name:res.name,
-        numYouthTokens: res.numYouthTokens,
-    },(err,user)=>{
-        console.log(user);
-    })
-})
-
-youthContract.events.BuyTokens({
-    fromBlock: BLOCK_NUMBER
-},(err,event)=>{
-    let res = event.returnValues;
-    const userId = res.to;
-    console.log(event);
-    User.findOne({id:userId},(err,user)=>{
-        user.numYouthTokens += Number(res.value);
-        user.save();
-    })
-})
-
-youthContract.events.SellTokens({
-    fromBlock: BLOCK_NUMBER
-},(err,event)=>{
-    let res = event.returnValues;
-    const userId = res.from;
-    User.findOne({id:userId},(err,user)=>{
-        user.numYouthTokens -= Number(res.value);
-        user.save();
-    })
-})
-
-youthContract.events.TransferInternal({
-    fromBlock: BLOCK_NUMBER
-},(err,event)=>{
-    let res = event.returnValues;
-    const sender = res.sender;
-    const receiver = res.receiver;
-    User.findOne({id:sender},(err,senderUser)=>{
-        senderUser.numYouthTokens -= Number(res.value);
-        senderUser.save();
-        User.findOne({id:receiver},(err,receiverUser)=>{
-            receiverUser.numYouthTokens += Number(res.value);
-            receiverUser.save();
-        })
-    })
-})
 
 function sendSignedTx(transactionObject, cb) {
     let transaction = new EthTx(transactionObject);
@@ -199,7 +201,7 @@ app.post('/createUser',(req,res)=>{
     console.log(req.body);
     Share.create({
         ownerAddress:req.body.name,
-        influencerAddress:req.body.name,
+        influencerId:req.body.name,
         numShares:100,
         priceAtWhichBought:10
     },(err,share)=>{
@@ -258,14 +260,14 @@ app.get('/getUserDetails/:id',(req,res)=>{
 
 app.get('/getShareHolders/:id', (req, res)=> {
 
-    const influencerAddress = req.params.id;
-    Influencer.findOne({address: influencerAddress}, (err, influencer) => {
+    const influencerId = req.params.id;
+    Influencer.findOne({id: influencerId}, (err, influencer) => {
         if (err) {
             return res.status(404).json({msg:'Id incorrect'});
         }
         else {
             if(influencer==null)return res.status(404).json({msg:'Influencer Not Found'});
-            Share.find({influencerAddress: influencerAddress}, (err, shares)=>{
+            Share.find({influencerId: influencerId}, (err, shares)=>{
                 if (err) {
                     console.log("Shares not found");
                 }
@@ -290,11 +292,11 @@ app.get('/dashboard/:id',(req,res)=>{
                 const portfolio = [];
                 await Promise.all(shares.map(async(share)=>{
                     var item = {
-                        id: share.influencerAddress,
+                        id: share.influencerId,
                         numShares: share.numShares,
                         priceAtWhichBought: share.priceAtWhichBought
                     };
-                    Influencer.findOne({influencerAddress: share.influencerAddress}, (err, influencer) => {
+                    Influencer.findOne({influencerId: share.influencerId}, (err, influencer) => {
                         if (err) {
                             console.log("Influencer share not in stock exchange anymore");
                         }
@@ -322,11 +324,11 @@ app.get('/holdings/:id',(req,res)=>{
                 const portfolio = [];
                 await Promise.all(shares.map(async(share)=>{
                     var item = {
-                        id: share.influencerAddress,
+                        id: share.influencerId,
                         numShares: share.numShares,
                         priceAtWhichBought: share.priceAtWhichBought
                     };
-                    Influencer.findOne({influencerAddress: share.influencerAddress}, (err, influencer) => {
+                    Influencer.findOne({influencerId: share.influencerId}, (err, influencer) => {
                         if (err) {
                             console.log("Influencer share not in stock exchange anymore");
                         }
@@ -352,11 +354,11 @@ app.get('/orders/:id',(req,res)=>{
     })
 })
 
-app.get('/getInfluencerDetails/:id',(req,res)=>{
-    const influencerName = req.params.id;
+app.get('/getInfluencerDetails/:name',(req,res)=>{
+    const influencerName = req.params.name;
     Influencer.findOne({name: influencerName}, (err, influencer) => {
         if (err) {
-            return res.status(404).json({msg:'Id incorrect'});
+            return res.status(404).json({msg:'Incorrect information'});
         }
         else {
             if(influencer==null)return res.status(404).json({msg:'Influencer Not Found'});
@@ -366,9 +368,9 @@ app.get('/getInfluencerDetails/:id',(req,res)=>{
             const sellOrderBook = influencer.sellOrderBook;
             const sharePriceHistory = influencer.sharePriceHistory;
             const averagePrice = influencer.averagePrice;
-            const influencerAddress = influencer.address;
+            const influencerId = influencer.id;
             const influencerObj = {
-                address: influencerAddress,
+                id: influencerId,
                 numShares: numShares,
                 curPrice: curPrice,
                 buyOrderBook: buyOrderBook,
@@ -387,7 +389,7 @@ app.post('/cancelBuyOrder',(req,res)=>{
   const id = req.body.id;
   Order.findById(id).exec((err,order)=>{
       if(err)return res.status(503).json({msg:'Incorrect Order ID'});
-      Influencer.findOne({address:order.influencerAddress}).populate({path:'buyOrderBook',model:'Order'}).exec((err,inf)=>{
+      Influencer.findOne({id:order.influencerId}).populate({path:'buyOrderBook',model:'Order'}).exec((err,inf)=>{
           console.log(inf,order);
           if(inf.buyOrderBook.length==0)return res.status(404).json({msg:'No such order'});
           for(let i=0;i<inf.buyOrderBook.length;i++){
@@ -406,7 +408,7 @@ app.post('/cancelBuyOrder',(req,res)=>{
 app.post('/cancelSellOrder',(req,res)=>{
     const id = req.body.id;
     Order.findById(id).exec((err,order)=>{
-        Influencer.findOne({address:order.influencerAddress}).populate({path:'sellOrderBook',model:'Order'}).exec((err,inf)=>{
+        Influencer.findOne({id:order.influencerId}).populate({path:'sellOrderBook',model:'Order'}).exec((err,inf)=>{
             if(inf.sellOrderBook.length==0)return res.status(404).json({msg:'No such order'});
             for(let i=0;i<inf.sellOrderBook.length;i++){
                 if(inf.sellOrderBook[i]._id.equals(order._id)){
@@ -423,12 +425,13 @@ app.post('/cancelSellOrder',(req,res)=>{
 })
 
 app.post('/buyShares',async(req,res)=>{
-    const data = req.body;
-    const influencerAddress = data.influencerAddress;
-    const influencerName = data.influencerName;
-    let maxBuyPrice = data.maxBuyPrice;
-    const numShares = data.numShares;
-    const userId = data.userId;
+    console.log(req.body);
+    const influencerId = req.body.influencerId;
+    const influencerName = req.body.influencerName;
+    let maxBuyPrice = req.body.maxBuyPrice;
+    const numShares = req.body.numShares;
+    const userId = req.body.userId;
+    console.log(userId);
     User.findOne({id:userId},(err,gUser)=>{
         if(err){
             return res.status(404);
@@ -436,7 +439,7 @@ app.post('/buyShares',async(req,res)=>{
             if(gUser.numTokens >= numShares*maxBuyPrice){
                 return res.status(204).json({msg:'Not enough tokens available.'});
             }else{
-                Influencer.findOne({address:influencerAddress}).populate('sellOrderBook').populate('buyOrderBook').exec((err,influencer)=>{
+                Influencer.findOne({id:influencerId}).populate('sellOrderBook').populate('buyOrderBook').exec((err,influencer)=>{
                     if(err)return res.status(404).json({msg:'Influncer Not Found'});
                     else{
                         let curSellOrderBook = influencer.sellOrderBook;
@@ -460,7 +463,7 @@ app.post('/buyShares',async(req,res)=>{
                                 address: userId,
                                 price: maxBuyPrice,
                                 quantity: numShares,
-                                influencerAddress:influencerAddress,
+                                influencerId:influencerId,
                                 influencerName: influencerName,
                                 type:'Buy',
                                 status:'Pending'
@@ -489,7 +492,7 @@ app.post('/buyShares',async(req,res)=>{
                             influencer.sharePriceHistory.push({price: maxBuyPrice, atDateTime: new Date(Date.now()).toISOString()});
                             influencer.save();
                             for(let i=influencer.sellOrderBook.length-1;i>=tillIdx;i--){
-                                Share.findOne({ownerAddress:influencer.sellOrderBook[i].address,influencerAddress:influencerAddress},(err,share)=>{
+                                Share.findOne({ownerAddress:influencer.sellOrderBook[i].address,influencerId:influencerId},(err,share)=>{
                                     User.findOne({id:influencer.sellOrderBook[i].address},async(err,user)=>{
                                         let amountOfSharesSold = curAmount + influencer.sellOrderBook[i].quantity > numShares ? numShares - curAmount : influencer.sellOrderBook[i].quantity;
                                         curAmount += amountOfSharesSold;
@@ -501,9 +504,9 @@ app.post('/buyShares',async(req,res)=>{
                                         user.save();
                                         if(share.numShares==0){
                                             share.remove();
-                                            await deleteShares(influencerAddress,influencer.sellOrderBook[i].address,0,user.numYouthTokens)
+                                            await deleteShares(influencerId,influencer.sellOrderBook[i].address,0,user.numYouthTokens)
                                         }else{
-                                            await decreaseShares(influencerAddress,influencer.sellOrderBook[i].address,share.numShares,user.numYouthTokens);
+                                            await decreaseShares(influencerId,influencer.sellOrderBook[i].address,share.numShares,user.numYouthTokens);
                                         }
                                         Order.findOne({_id:influencer.sellOrderBook[i]._id}).exec((err,order)=>{
                                             order.quantity -= amountOfSharesSold;
@@ -518,10 +521,10 @@ app.post('/buyShares',async(req,res)=>{
                                             }
                                         })
                                         if(i==tillIdx){
-                                            Share.findOne({ownerAddress: userId,influencerAddress: influencerAddress},async(err,existingShare)=>{
+                                            Share.findOne({ownerAddress: userId,influencerId: influencerId},async(err,existingShare)=>{
                                                 Order.create({
                                                     address: userId,
-                                                    influencerAddress:influencerAddress,
+                                                    influencerId:influencerId,
                                                     influencerName: influencerName,
                                                     price: maxBuyPrice,
                                                     quantity: numShares,
@@ -534,16 +537,16 @@ app.post('/buyShares',async(req,res)=>{
                                                     if(existingShare!=null){
                                                         existingShare.numShares += numShares;
                                                         existingShare.save();
-                                                        await increaseShares(influencerAddress,userId,existingShare.numShares,gUser.numYouthTokens);
+                                                        await increaseShares(influencerId,userId,existingShare.numShares,gUser.numYouthTokens);
                                                         return res.status(200).json({share:existingShare,msg:'Share updated sucessfully'});
                                                     }else{
                                                         Share.create({
                                                             ownerAddress: userId,
-                                                            influencerAddress: influencerAddress,
+                                                            influencerId: influencerId,
                                                             numShares: numShares,
                                                             priceAtWhichBought: maxBuyPrice,
                                                         },async(err,share)=>{
-                                                            await addShares(influencerAddress,userId,share.numShares,gUser.numYouthTokens)
+                                                            await addShares(influencerId,userId,share.numShares,gUser.numYouthTokens)
                                                             return res.status(200).json({share:share,msg:'Share added successfully'});
                                                         })
                                                     }
@@ -564,7 +567,7 @@ app.post('/buyShares',async(req,res)=>{
 app.post('/sellShares',async(req,res)=>{
     const data = req.body;
     console.log(data);
-    const influencerAddress = data.influencerAddress;
+    const influencerId = data.influencerId;
     const influencerName = data.influencerName;
     let minSellPrice = data.minSellPrice;
     const numShares = data.numShares;
@@ -574,10 +577,10 @@ app.post('/sellShares',async(req,res)=>{
             return res.status(404);
         }else{
             if(gUser==null)return res.status(404).json({msg:'No such user found'});
-            Influencer.findOne({address:influencerAddress}).populate('buyOrderBook').populate('sellOrderBook').exec((err,influencer)=>{
+            Influencer.findOne({id:influencerId}).populate('buyOrderBook').populate('sellOrderBook').exec((err,influencer)=>{
                 if(err)return res.status(404).json({msg:'Influncer Not Found'});
                 else{
-                    Share.findOne({ownerAddress:userId,influencer:influencerAddress}).exec(async(err,share)=>{
+                    Share.findOne({ownerAddress:userId,influencer:influencerId}).exec(async(err,share)=>{
                         if(err)return res.status(404).json({msg:'No shares of this user wrt that influencer'});
                         else{
                             if(share==null)return res.status(203).json({msg:'not enough shares'});
@@ -601,7 +604,7 @@ app.post('/sellShares',async(req,res)=>{
                                         address: userId,
                                         price: minSellPrice,
                                         quantity: numShares,
-                                        influencerAddress:influencerAddress,
+                                        influencerId:influencerId,
                                         influencerName: influencerName,
                                         type:'Sell',
                                         status:'Pending'
@@ -631,7 +634,7 @@ app.post('/sellShares',async(req,res)=>{
                                     influencer.save();
                                     for(let i=influencer.buyOrderBook.length-1;i>=tillIdx;i--){
                                         User.findOne({id:influencer.buyOrderBook[i].address},(err,user)=>{
-                                            Share.findOne({ownerAddress:influencer.buyOrderBook[i].address,influencerAddress:influencerAddress},async(err,existingShare)=>{
+                                            Share.findOne({ownerAddress:influencer.buyOrderBook[i].address,influencerId:influencerId},async(err,existingShare)=>{
                                                 let amountOfSharesBought = curAmount + influencer.buyOrderBook[i].quantity > numShares ? numShares - curAmount : influencer.buyOrderBook[i].quantity;
                                                 let amountOfYouthTokensToBeDeducted = amountOfSharesBought*influencer.buyOrderBook[i].price;
                                                 user.numYouthTokens -= amountOfYouthTokensToBeDeducted;
@@ -641,15 +644,15 @@ app.post('/sellShares',async(req,res)=>{
                                                 if(existingShare!=null){
                                                     existingShare.numShares += amountOfSharesBought;
                                                     existingShare.save();
-                                                    await increaseShares(influencerAddress,influencer.buyOrderBook[i].address,influencer.existingShare.numShares,user.numYouthTokens);
+                                                    await increaseShares(influencerId,influencer.buyOrderBook[i].address,influencer.existingShare.numShares,user.numYouthTokens);
                                                 }else{
                                                     Share.create({
                                                         ownerAddress: influencer.buyOrderBook[i].address,
-                                                        influencerAddress: influencerAddress,
+                                                        influencerId: influencerId,
                                                         numShares: amountOfSharesBought,
                                                         priceAtWhichBought: influencer.buyOrderBook[i].price,
                                                     },async(err,share)=>{
-                                                        await addShares(influencerAddress,influencer.buyOrderBook[i].address,share.numShares,user.numYouthTokens);
+                                                        await addShares(influencerId,influencer.buyOrderBook[i].address,share.numShares,user.numYouthTokens);
                                                     })
                                                 }
                                                 Order.findOne({_id:influencer.buyOrderBook[i]._id}).exec((err,order)=>{
@@ -671,7 +674,7 @@ app.post('/sellShares',async(req,res)=>{
                                                         address: userId,
                                                         price: minSellPrice,
                                                         quantity: numShares,
-                                                        influencerAddress:influencerAddress,
+                                                        influencerId:influencerId,
                                                         influencerName: influencerName,
                                                         type:'Sell',
                                                         status:'Completed'
@@ -682,9 +685,9 @@ app.post('/sellShares',async(req,res)=>{
                                                         gUser.save();
                                                         if(share.numShares==0){
                                                             share.remove();
-                                                            await deleteShares(influencerAddress,userId,share.numShares,gUser.numYouthTokens);
+                                                            await deleteShares(influencerId,userId,share.numShares,gUser.numYouthTokens);
                                                         }else{
-                                                            await decreaseShares(influencerAddress,userId,share.numShares,gUser.numYouthTokens);
+                                                            await decreaseShares(influencerId,userId,share.numShares,gUser.numYouthTokens);
                                                         }
                                                         return res.status(200).json({share:share,msg:'Share updated sucessfully'});
                                                     })

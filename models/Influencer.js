@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const influencerSchema = new mongoose.Schema({
-    address: String,
+    id: String,
     name: String,
     numShares: Number,
     curPrice: Number,
