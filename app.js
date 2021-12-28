@@ -291,20 +291,19 @@ app.get('/dashboard/:id',(req,res)=>{
             Share.find({ownerAddress: gUser.id}).exec(async(err, shares) =>{
                 const portfolio = [];
                 await Promise.all(shares.map(async(share)=>{
-                    var item = {
+                    const item = {
                         id: share.influencerId,
                         numShares: share.numShares,
                         priceAtWhichBought: share.priceAtWhichBought
                     };
-                    Influencer.findOne({influencerId: share.influencerId}, (err, influencer) => {
-                        if (err) {
-                            console.log("Influencer share not in stock exchange anymore");
-                        }
-                        else {
-                            item["name"] = influencer.name;
-                        }
-                    });
-                    portfolio.push(item);
+                    try {
+                        const influencer = await Influencer.findOne({influencerId: share.influencerId});
+                        item["name"] = influencer.name;
+                        item["curPrice"] = influencer.curPrice;
+                        portfolio.push(item);
+                    } catch(err) {
+                        console.log("Influencer share not in stock exchange anymore");
+                    }
                 }));
                 return res.status(200).json({portfolio:portfolio, numYouthTokens: gUser.numYouthTokens});
             });
@@ -323,22 +322,20 @@ app.get('/holdings/:id',(req,res)=>{
             Share.find({ownerAddress: gUser.id}).exec(async(err, shares) =>{
                 const portfolio = [];
                 await Promise.all(shares.map(async(share)=>{
-                    var item = {
+                    const item = {
                         id: share.influencerId,
                         numShares: share.numShares,
                         priceAtWhichBought: share.priceAtWhichBought
                     };
-                    Influencer.findOne({influencerId: share.influencerId}, (err, influencer) => {
-                        if (err) {
-                            console.log("Influencer share not in stock exchange anymore");
-                        }
-                        else {
-                            item["curPrice"] = influencer.curPrice;
-                            item["name"] = influencer.name;
-                            item["averagePrice"] = influencer.averagePrice;
-                        }
-                    });
-                    portfolio.push(item);
+                    try {
+                        const influencer = await Influencer.findOne({influencerId: share.influencerId});
+                        item["curPrice"] = influencer.curPrice;
+                        item["name"] = influencer.name;
+                        item["averagePrice"] = influencer.averagePrice;
+                        portfolio.push(item);
+                    } catch(err) {
+                        console.log("Influencer share not in stock exchange anymore");
+                    }
                 }));
                 return res.status(200).json({portfolio:portfolio,numYouthTokens:gUser.numYouthTokens});
             });
