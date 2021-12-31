@@ -122,7 +122,7 @@ app.use(cors());
 
 const MONGO_STRING = process.env.MONGO_URL;
 
-mongoose.connect(MONGO_STRING);
+mongoose.connect(MONGO_STRING,{useNewUrlParser: true});
 
 const blockchainTransactionsQueue = [];
 
@@ -187,11 +187,11 @@ async function addShares(inf,owner,numShares,numYouthTokens){
 }
 
 
-async function deleteShares(inf,owner,numShares,numYouthTokens){
-    console.log(inf,owner,numShares,numYouthTokens);
+async function deleteShares(inf,owner,numYouthTokens){
+    console.log(inf,owner,numYouthTokens);
     /*if(blockchainTransactionsQueue.length==0)await performTx(youthContract.methods.deleteShares(inf,owner,numShares,numYouthTokens).encodeABI());
     else*/
-    blockchainTransactionsQueue.push(youthContract.methods.deleteShares(inf,owner,numShares,numYouthTokens).encodeABI());
+    blockchainTransactionsQueue.push(youthContract.methods.deleteShares(inf,owner,numYouthTokens).encodeABI());
 }
 
 
@@ -236,7 +236,7 @@ app.get('/orderBook/:name',(req,res)=>{
 
 app.get('/getUserDetails/:id',(req,res)=>{
 
-    const userId = req.params.id;
+    const userId = decodeURI(req.params.id);
     console.log(userId);
     User.findOne({id: userId},(err, gUser)=>{
         if(err){
@@ -260,7 +260,7 @@ app.get('/getUserDetails/:id',(req,res)=>{
 
 app.get('/getShareHolders/:id', (req, res)=> {
 
-    const influencerId = req.params.id;
+    const influencerId = decodeURI(req.params.id);
     Influencer.findOne({id: influencerId}, (err, influencer) => {
         if (err) {
             return res.status(404).json({msg:'Id incorrect'});
@@ -280,8 +280,10 @@ app.get('/getShareHolders/:id', (req, res)=> {
 });
 
 app.get('/dashboard/:id',(req,res)=>{
-    const userId = req.params.id;
+    const userId = decodeURI(req.params.id);
+    console.log(userId);
     User.findOne({id:userId},(err,gUser)=>{
+        console.log(err,gUser);
         if(err){
             return res.status(400).json({msg:'User Id Incorrect'});
         } else if(!gUser) {
@@ -313,7 +315,7 @@ app.get('/dashboard/:id',(req,res)=>{
 
 app.get('/holdings/:id',(req,res)=>{
 
-    const userId = req.params.id;
+    const userId = decodeURI(req.params.id);
     User.findOne({id:userId},(err,gUser)=>{
         if(err){
             return res.status(400).json({msg:'User Id Incorrect'});
@@ -344,7 +346,7 @@ app.get('/holdings/:id',(req,res)=>{
 });
 
 app.get('/orders/:id',(req,res)=>{
-    const userId = req.params.id;
+    const userId = decodeURI(req.params.id);
 	console.log("userId : ",userId);
     Order.find({address: userId}).exec(async(err, orders) =>{
         if(err)return res.status(503).json({msg:'Incorrect User ID'});
@@ -353,7 +355,7 @@ app.get('/orders/:id',(req,res)=>{
 })
 
 app.get('/getInfluencerDetails/:name',(req,res)=>{
-    const influencerName = req.params.name;
+    const influencerName = decodeURI(req.params.name);
     Influencer.findOne({name: influencerName}, (err, influencer) => {
         if (err) {
             return res.status(404).json({msg:'Incorrect information'});
@@ -501,7 +503,7 @@ app.post('/buyShares',async(req,res)=>{
                                         user.save();
                                         if(share.numShares==0){
                                             share.remove();
-                                            await deleteShares(influencerId,influencer.sellOrderBook[i].address,0,user.numYouthTokens)
+                                            await deleteShares(influencerId,influencer.sellOrderBook[i].address,user.numYouthTokens)
                                         }else{
                                             await decreaseShares(influencerId,influencer.sellOrderBook[i].address,share.numShares,user.numYouthTokens);
                                         }
@@ -682,7 +684,7 @@ app.post('/sellShares',async(req,res)=>{
                                                         gUser.save();
                                                         if(share.numShares==0){
                                                             share.remove();
-                                                            await deleteShares(influencerId,userId,share.numShares,gUser.numYouthTokens);
+                                                            await deleteShares(influencerId,userId,gUser.numYouthTokens);
                                                         }else{
                                                             await decreaseShares(influencerId,userId,share.numShares,gUser.numYouthTokens);
                                                         }
