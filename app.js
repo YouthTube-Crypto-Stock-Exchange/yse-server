@@ -299,7 +299,7 @@ app.get('/dashboard/:id',(req,res)=>{
                         priceAtWhichBought: share.priceAtWhichBought
                     };
                     try {
-                        const influencer = await Influencer.findOne({influencerId: share.influencerId});
+                        const influencer = await Influencer.findOne({id: share.influencerId});
                         item["name"] = influencer.name;
                         item["curPrice"] = influencer.curPrice;
                         portfolio.push(item);
@@ -324,13 +324,13 @@ app.get('/holdings/:id',(req,res)=>{
             Share.find({ownerAddress: gUser.id}).exec(async(err, shares) =>{
                 const portfolio = [];
                 await Promise.all(shares.map(async(share)=>{
-                    const item = {
+                    let item = {
                         id: share.influencerId,
                         numShares: share.numShares,
                         priceAtWhichBought: share.priceAtWhichBought
                     };
                     try {
-                        const influencer = await Influencer.findOne({influencerId: share.influencerId});
+                        const influencer = await Influencer.findOne({id: share.influencerId});
                         item["curPrice"] = influencer.curPrice;
                         item["name"] = influencer.name;
                         item["averagePrice"] = influencer.averagePrice;
