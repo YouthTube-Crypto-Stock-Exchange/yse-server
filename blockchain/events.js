@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 const Share = require('../models/Share');
 const Influencer = require('../models/Influencer');
 const User = require('../models/User');
-const {youthContract,web3} = require('../abi');
+const {youthContract,web3} = require('./abi');
 const {addShares} = require('./tx');
 
 const initEvents = async () => {

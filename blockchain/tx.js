@@ -1,5 +1,5 @@
 const EthTx = require('ethereumjs-tx').Transaction;
-const {youthContract,web3} = require('../abi');
+const {youthContract,web3} = require('./abi');
 
 const blockchainTransactionsQueue = [];
 
