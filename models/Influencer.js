@@ -24,13 +24,6 @@ const influencerSchema = new mongoose.Schema({
         }
     ],
     averagePrice: Number
-    // shares:{
-    //     type:mongoose.Schema.Types.Map,
-    //     of:{
-    //         type:mongoose.Schema.Types.ObjectId,
-    //         ref:'Share'
-    //     }
-    // },
 });
 
 module.exports = mongoose.model('Influencer', influencerSchema);

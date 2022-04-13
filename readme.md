@@ -10,4 +10,6 @@
 - Step 8 : make sure mongodb is installed and running(for running open terminal and type mongo)
 - Step 9 : Run the application using the command `node app` or `nodemon app`
 
-Note : nodemon is not as dev dependency so install it manually.
+## Tests
+
+` npm mocha test `
