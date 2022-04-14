@@ -24,13 +24,13 @@ const performTx = (data) => web3.eth.getTransactionCount(process.env.PUBLIC_ADDR
         to: process.env.CONTRACT_ADDRESS,
         data: data
     };
-    // console.log("transaction===",transactionNonce,transactionObject);
+    // console.log("transaction: ",transactionNonce,transactionObject);
     sendSignedTx(transactionObject, (err, ret) => {
         if (err) {
             console.log("An error occurred", err)
             return
         }
-        console.log("The txHash is: ", ret)
+        //console.log("The txHash is: ", ret)
     });
 });
 

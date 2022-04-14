@@ -10,7 +10,7 @@ const initEvents = async () => {
     const BLOCK_NUMBER = await web3.eth.getBlockNumber();
     youthContract.events.ITORelease({
         fromBlock: BLOCK_NUMBER
-    }, async function(error, event){ 
+    }, async function(err, event){ 
         let res = event.returnValues;
         console.log(res);
         Share.create({
@@ -63,7 +63,7 @@ const initEvents = async () => {
             name:res.name,
             numYouthTokens: res.numYouthTokens,
         },(err,user)=>{
-            console.log(user);
+            //console.log(user);
         })
     })
     
@@ -72,7 +72,6 @@ const initEvents = async () => {
     },(err,event)=>{
         let res = event.returnValues;
         const userId = res.to;
-        console.log(event);
         User.findOne({id:userId},(err,user)=>{
             user.numYouthTokens += Number(res.value);
             user.save();

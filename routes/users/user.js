@@ -12,7 +12,7 @@ router.use(influencerRoutes);
 /* 
 route purpose : to get a specific user details with id specified in params
 */
-router.get('/getUserDetails/:id',(req,res)=>{
+router.get('/user-details/:id',(req,res)=>{
 
     const userId = decodeURI(req.params.id);
     console.log(userId);
@@ -21,6 +21,7 @@ router.get('/getUserDetails/:id',(req,res)=>{
             return res.status(400).json({msg:'User Id Incorrect'});
         }
         else{
+            if(gUser==null) return res.status(404).json({msg:'No user found'});
             const id = userId;
             const numYouthTokens = gUser.numYouthTokens;
             const isInfluencer = gUser.isInfluencer;

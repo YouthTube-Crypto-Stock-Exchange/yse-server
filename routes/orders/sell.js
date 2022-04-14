@@ -12,7 +12,7 @@ const router = express.Router();
 route purpose : to propose a sell order
 expects : {influencerId,influencerName,minSellPrice,numShares}
 */
-router.post('/sellShares',async(req,res)=>{
+router.post('/sell-shares',async(req,res)=>{
     const data = req.body;
     console.log(data);
     const influencerId = data.influencerId;
@@ -71,7 +71,7 @@ router.post('/sellShares',async(req,res)=>{
                                             if(flag)influencer.sellOrderBook.splice(0,0,order);
                                         }
                                         influencer.save();
-                                        res.status(200).json({msg:'done'});
+                                        return res.status(200).json({msg:'done'});
                                     })
                                 }else{
                                     curAmount = 0;
@@ -143,7 +143,7 @@ router.post('/sellShares',async(req,res)=>{
                                         })
                                     }
                                 }
-                            }else res.status(404).json({msg:'Not enough shares'});
+                            }else return res.status(404).json({msg:'Not enough shares'});
                         }
                     })
                 }

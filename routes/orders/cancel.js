@@ -9,7 +9,7 @@ const router = express.Router();
 route purpose : to cancel a buy order
 expects : {order id}
 */
-router.post('/cancelBuyOrder',(req,res)=>{
+router.post('/cancel-buy-order',(req,res)=>{
     const id = req.body.id;
     Order.findById(id).exec((err,order)=>{
         if(err)return res.status(503).json({msg:'Incorrect Order ID'});
@@ -33,7 +33,7 @@ router.post('/cancelBuyOrder',(req,res)=>{
 route purpose : to cancel a sell order
 expects : {order id}
 */
-router.post('/cancelSellOrder',(req,res)=>{
+router.post('/cancel-sell-order',(req,res)=>{
     const id = req.body.id;
     Order.findById(id).exec((err,order)=>{
         Influencer.findOne({id:order.influencerId}).populate({path:'sellOrderBook',model:'Order'}).exec((err,inf)=>{

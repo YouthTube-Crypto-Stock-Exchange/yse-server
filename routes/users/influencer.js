@@ -8,7 +8,7 @@ const router = express.Router();
 /* 
 route purpose : to get details of all the share holders of an influencer with provided influencer id in params
 */
-router.get('/getShareHolders/:id', (req, res)=> {
+router.get('/share-holders/:id', (req, res)=> {
 
     const influencerId = decodeURI(req.params.id);
     Influencer.findOne({id: influencerId}, (err, influencer) => {
@@ -32,7 +32,7 @@ router.get('/getShareHolders/:id', (req, res)=> {
 /* 
 route purpose : to get a specific influencer details with the influencer name specified in the params
 */
-router.get('/getInfluencerDetails/:name',(req,res)=>{
+router.get('/influencer-details/:name',(req,res)=>{
     const influencerName = decodeURI(req.params.name);
     Influencer.findOne({name: influencerName}, (err, influencer) => {
         if (err) {

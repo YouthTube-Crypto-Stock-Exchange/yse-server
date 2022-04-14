@@ -12,7 +12,7 @@ const router = express.Router();
 route purpose : to propose a buy order
 expects : {influencerId,influencerName,maxBuyPrice,numShares}
 */
-router.post('/buyShares',async(req,res)=>{
+router.post('/buy-shares',async(req,res)=>{
     const influencerId = req.body.influencerId;
     const influencerName = req.body.influencerName;
     let maxBuyPrice = req.body.maxBuyPrice;
@@ -21,7 +21,7 @@ router.post('/buyShares',async(req,res)=>{
     console.log(userId);
     User.findOne({id:userId},(err,gUser)=>{
         if(err){
-            return res.status(404).json({msg:'Could not retreive user information'});
+            return res.status(404).json({msg:'Could not retrieve user information'});
         }else{
             if(gUser.numTokens >= numShares*maxBuyPrice){
                 return res.status(204).json({msg:'Not enough tokens available.'});
@@ -69,7 +69,7 @@ router.post('/buyShares',async(req,res)=>{
                                     if(flag)influencer.buyOrderBook.splice(0,0,order);
                                 }
                                 influencer.save();
-                                res.status(200).json({msg:'done'});
+                                return res.status(200).json({msg:'done'});
                             })
                         }else{
                             let curAmount = 0;
